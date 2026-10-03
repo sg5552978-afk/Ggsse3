@@ -1,0 +1,37 @@
+name: PC VIRTUAL QEMU MOONLIGHT
+
+on:
+  workflow_dispatch:
+
+jobs:
+  qemu-windows:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Preparar Ambiente QEMU e KVM
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-system-x86 qemu-utils wget
+          
+      - name: Baixar Imagem do Windows e Iniciar VM
+        run: |
+          # Cria um disco virtual de 50GB
+          qemu-img create -f qcow2 win10.qcow2 50G
+          
+          # Inicia a VM com suporte a aceleração e placa gráfica emulada
+          # É aqui que o Sunshine/Moonlight ou RDP conecta via KVM
+          echo "Iniciando VM em segundo plano..."
+          qemu-system-x86_64 \
+            -m 8G \
+            -smp cores=2 \
+            -cpu host \
+            -enable-kvm \
+            -vga std \
+            -net nic,model=virtio \
+            -net user,hostfwd=tcp::3389-:3389,hostfwd=tcp::47989-:47989 \
+            -hda win10.qcow2 &
+
+      - name: Manter Ativo
+        run: |
+          echo "PC Virtual rodando via QEMU!"
+          while true; do sleep 1000; done
+          
