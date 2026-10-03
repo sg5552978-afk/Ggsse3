@@ -12,13 +12,15 @@ jobs:
           sudo apt-get update -y
           sudo apt-get install -y qemu-system-x86 qemu-utils curl
 
-      - name: Baixar e Configurar Ngrok
+      - name: Instalar e Configurar Ngrok
         env:
           NGROK_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
         run: |
-          curl -s https://bin.equinox.io/c/b4Pvu3qMcdy/ngrok-v3-stable-linux-amd64.tgz -o ngrok.tgz
-          tar -xvzf ngrok.tgz
-          ./ngrok config add-authtoken $NGROK_TOKEN
+          curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null
+          echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | sudo tee /etc/apt/sources.list.d/ngrok.list
+          sudo apt-get update -y
+          sudo apt-get install -y ngrok
+          ngrok config add-authtoken $NGROK_TOKEN
 
       - name: Baixar Imagem do Windows e Iniciar QEMU
         run: |
@@ -36,7 +38,7 @@ jobs:
 
       - name: Iniciar Tunel Ngrok
         run: |
-          ./ngrok tcp 3389 --log=stdout > ngrok.log &
+          ngrok tcp 3389 --log=stdout > ngrok.log &
           sleep 5
           
           echo "=========================================="
