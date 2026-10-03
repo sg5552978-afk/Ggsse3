@@ -12,19 +12,15 @@ jobs:
           sudo apt-get update -y
           sudo apt-get install -y qemu-system-x86 qemu-utils curl
 
-      - name: Baixar e Configurar Ngrok
-        env:
-          NGROK_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
-        run: |
-          curl -shttps://bin.equinox.io/c/b4Pvu3qMcdy/ngrok-v3-stable-linux-amd64.tgz | tar xz
-          ./ngrok config add-authtoken $NGROK_TOKEN
+      - name: Configurar Ngrok
+        uses: ngrok/ngrok-action@v2
+        with:
+          authtoken: ${{ secrets.NGROK_AUTH_TOKEN }}
 
       - name: Baixar Imagem do Windows e Iniciar QEMU
         run: |
-          # Baixa uma imagem TinyWindows pré-configurada para QEMU
           curl -L -o win10.qcow2 "https://app.box.com/shared/static/4v3z4m3m3l8f0e5y9y9x.qcow2"
           
-          # Inicia a VM em segundo plano redirecionando a porta RDP (3389)
           qemu-system-x86_64 \
             -m 8G \
             -smp cores=2 \
@@ -37,10 +33,9 @@ jobs:
 
       - name: Iniciar Tunel Ngrok
         run: |
-          ./ngrok tcp 3389 --log=stdout > ngrok.log &
+          ngrok tcp 3389 --log=stdout > ngrok.log &
           sleep 5
           
-          # Exibe o IP e Porta gerados pelo Ngrok no log do GitHub Actions
           echo "=========================================="
           echo "DADOS DE CONEXAO RDP:"
           curl -s http://localhost:4040/api/tunnels | grep -o 'tcp://[^"]*'
